@@ -62,30 +62,42 @@
             document.getElementById("startScanBtn").style.display = "none";
             
             scanner = new Html5Qrcode("reader");
+
             scanner.start(
-                { facingMode: "environment" },
+                { facingMode: "environment" }, // Use back camera
                 { fps: 10, qrbox: 250 },
                 (decodedText) => {
+                    console.log("Scanned QR:", decodedText);  // Debugging log
                     extractSRNO(decodedText);
                 },
-                (error) => {}
-            );
+                (error) => {
+                    console.log("QR Scan Error:", error);  // Debugging log
+                }
+            ).catch(err => {
+                console.error("Scanner Initialization Error:", err);
+                alert("Error initializing camera. Please check camera permissions.");
+            });
         }
 
         function extractSRNO(xmlData) {
-            let parser = new DOMParser();
-            let xmlDoc = parser.parseFromString(xmlData, "text/xml");
-            let srnoElement = xmlDoc.getElementsByTagName("SRNO")[0];
+            try {
+                let parser = new DOMParser();
+                let xmlDoc = parser.parseFromString(xmlData, "text/xml");
+                let srnoElement = xmlDoc.getElementsByTagName("SRNO")[0];
 
-            if (srnoElement) {
-                let srnoValue = srnoElement.textContent;
-                if (!srnoList.includes(srnoValue)) {
-                    srnoList.push(srnoValue);
-                    let row = `<tr><td>${srnoValue}</td></tr>`;
-                    document.getElementById("srnoTable").innerHTML += row;
+                if (srnoElement) {
+                    let srnoValue = srnoElement.textContent.trim();
+                    if (!srnoList.includes(srnoValue)) {
+                        srnoList.push(srnoValue);
+                        let row = `<tr><td>${srnoValue}</td></tr>`;
+                        document.getElementById("srnoTable").innerHTML += row;
+                    }
+                } else {
+                    alert("No <SRNO> found in QR data!");
                 }
-            } else {
-                alert("No <SRNO> found in QR data!");
+            } catch (e) {
+                console.error("XML Parsing Error:", e);
+                alert("Error parsing QR code. Ensure it contains valid XML.");
             }
 
             scanner.stop().then(() => {
@@ -103,4 +115,4 @@
         }
     </script>
 </body>
-</html
+</html>
