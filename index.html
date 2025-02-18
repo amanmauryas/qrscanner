@@ -3,87 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner</title>
+    <title>QR Scanner & SRNO Extractor</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #reader { width: 300px; margin: auto; display: none; }
-        #result { font-size: 18px; margin-top: 20px; color: green; }
-        button { padding: 10px; font-size: 16px; cursor: pointer; margin: 10px; }
-        table { width: 50%; margin: auto; border-collapse: collapse; }
-        th, td { border: 1px solid black; padding: 10px; text-align: center; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #reader {
+            width: 300px;
+            margin: auto;
+        }
+        table {
+            width: 80%;
+            margin: auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h2>QR Code Scanner</h2>
-    <button id="startScanBtn" onclick="startScanner()">Start Scanning</button>
+    <h2>QR Scanner - Extract SRNO</h2>
     <div id="reader"></div>
-    <p id="result"></p>
-
     <h3>Scanned SRNOs</h3>
-    <table id="srnoTable">
-        <tr><th>SRNO</th></tr>
+    <table>
+        <thead>
+            <tr>
+                <th>SRNO</th>
+            </tr>
+        </thead>
+        <tbody id="srnoTable"></tbody>
     </table>
-    <button id="downloadBtn" onclick="downloadExcel()" style="display:none;">Download Excel</button>
+    <button onclick="downloadExcel()">Download Excel</button>
 
     <script>
-        let scanner;
         let srnoList = [];
 
         function startScanner() {
-            document.getElementById("reader").style.display = "block";
-            document.getElementById("startScanBtn").style.display = "none";
-
-            scanner = new Html5Qrcode("reader");
-
+            const scanner = new Html5Qrcode("reader");
             scanner.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                (decodedText) => {
-                    console.log("Scanned QR:", decodedText);
-                    let srno = extractSRNO(decodedText);
-
-                    if (srno) {
-                        alert("Scanned SRNO: " + srno);
-                        srnoList.push([srno]);  // Store as array for Excel
-                        updateTable(srno);
-                    } else {
-                        alert("No <SRNO> found in QR!");
-                    }
-
-                    scanner.stop();
-                    document.getElementById("reader").style.display = "none";
-                    document.getElementById("startScanBtn").style.display = "block";
-                    document.getElementById("downloadBtn").style.display = "block";
+                {
+                    fps: 10,
+                    qrbox: 250
                 },
-                (error) => {
-                    console.log("Scanning Error:", error);
+                (decodedText) => {
+                    extractSRNO(decodedText);
+                    scanner.stop(); 
+                },
+                (error) => {}
+            );
+        }
+
+        function extractSRNO(xmlData) {
+            let parser = new DOMParser();
+            let xmlDoc = parser.parseFromString(xmlData, "text/xml");
+            let srnoElement = xmlDoc.getElementsByTagName("SRNO")[0];
+
+            if (srnoElement) {
+                let srnoValue = srnoElement.textContent;
+                if (!srnoList.includes(srnoValue)) {
+                    srnoList.push(srnoValue);
+                    let row = `<tr><td>${srnoValue}</td></tr>`;
+                    document.getElementById("srnoTable").innerHTML += row;
                 }
-            ).catch(err => {
-                console.error("Scanner Initialization Error:", err);
-                alert("Error initializing camera. Check permissions.");
-            });
-        }
-
-        function extractSRNO(xmlText) {
-            let match = xmlText.match(/<SRNO>(.*?)<\/SRNO>/);
-            return match ? match[1] : null;
-        }
-
-        function updateTable(srno) {
-            let table = document.getElementById("srnoTable");
-            let row = table.insertRow();
-            let cell = row.insertCell(0);
-            cell.innerText = srno;
+            } else {
+                alert("No <SRNO> found in QR data!");
+            }
         }
 
         function downloadExcel() {
+            let ws = XLSX.utils.aoa_to_sheet([["SRNO"], ...srnoList.map((s) => [s])]);
             let wb = XLSX.utils.book_new();
-            let ws = XLSX.utils.aoa_to_sheet([["SRNO"], ...srnoList]);
-            XLSX.utils.book_append_sheet(wb, ws, "Scanned_SRNOs");
-            XLSX.writeFile(wb, "scanned_srnos.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "SRNO Data");
+            XLSX.writeFile(wb, "SRNO_List.xlsx");
         }
+
+        startScanner();
     </script>
 </body>
 </html>
