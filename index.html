@@ -6,31 +6,14 @@
     <title>QR Code Scanner</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        #reader {
-            width: 300px;
-            margin: auto;
-            display: none;
-        }
-        #result {
-            font-size: 18px;
-            margin-top: 20px;
-            color: green;
-        }
-        button {
-            padding: 10px;
-            font-size: 16px;
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 300px; margin: auto; display: none; }
+        #result { font-size: 18px; margin-top: 20px; color: green; }
+        button { padding: 10px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
     <h2>QR Code Scanner</h2>
-
     <button id="startScanBtn" onclick="startScanner()">Start Scanning</button>
     <div id="reader"></div>
     <p id="result"></p>
@@ -45,10 +28,11 @@
             scanner = new Html5Qrcode("reader");
 
             scanner.start(
-                { facingMode: "environment" }, // Back camera
+                { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 (decodedText) => {
                     console.log("Scanned QR:", decodedText);
+                    alert("Scanned Data: " + decodedText); // Alert for debugging
                     document.getElementById("result").innerText = "Scanned Data: " + decodedText;
                     scanner.stop();
                     document.getElementById("reader").style.display = "none";
