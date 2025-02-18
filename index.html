@@ -54,22 +54,34 @@
         console.warn(errorMessage);
     }
 
-    // Initialize the QR Code scanner
+    // Function to start QR scanner with camera access
     function startQRScanner() {
-        const html5QrCode = new Html5Qrcode("reader");
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Ensure the user has granted camera permission
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    const html5QrCode = new Html5Qrcode("reader");
 
-        // Start scanning with the camera
-        html5QrCode.start(
-            { facingMode: "environment" }, // Use the rear camera
-            {
-                fps: 10, // Frames per second
-                qrbox: { width: 250, height: 250 } // Area for QR code scanning
-            },
-            onScanSuccess,
-            onScanError
-        ).catch((err) => {
-            console.error("Error starting QR scanner:", err);
-        });
+                    // Start scanning with the camera
+                    html5QrCode.start(
+                        { facingMode: "environment" }, // Use the rear camera
+                        {
+                            fps: 10, // Frames per second
+                            qrbox: { width: 250, height: 250 } // Area for QR code scanning
+                        },
+                        onScanSuccess,
+                        onScanError
+                    ).catch((err) => {
+                        console.error("Error starting QR scanner:", err);
+                    });
+                })
+                .catch(function (err) {
+                    alert("Camera permission is required to scan QR codes.");
+                    console.error("Camera access denied:", err);
+                });
+        } else {
+            alert("Your browser does not support camera access.");
+        }
     }
 
     // Stop the QR Code scanner
@@ -96,7 +108,10 @@
     }
 
     // Start scanning on page load
-    window.onload = startQRScanner;
+    window.onload = function() {
+        // Start QR scanning only when user allows camera access
+        startQRScanner();
+    };
 </script>
 
 </body>
