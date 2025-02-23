@@ -8,8 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Pacifico&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <style>
     body {
@@ -18,10 +18,9 @@
 </style>
 <body class="bg-[#392759] text-white flex flex-col justify-between items-center h-screen w-screen p-4">
 
-    <!-- Header -->
-    <h1 class="text-3xl font-bold text-white animate-pulse">📸QR Scanner for SIM Billing</h1>
+    <h1 class="text-3xl font-bold text-white animate-pulse">📸 QR Scanner for SIM Billing</h1>
 
-    <!-- QR Scanner Container -->
+    <!-- QR Scanner -->
     <div class="relative w-full max-w-xs rounded-lg shadow-lg mt-4">
         <video id="camera" class="w-full h-64 rounded-lg shadow-md animate-fadeIn" autoplay></video>
         <div class="absolute inset-0 border-4 border-white rounded-lg animate-pulse"></div>
@@ -33,12 +32,20 @@
         <span id="current-srno" class="text-red-300">None</span>
     </p>
 
+    <!-- Manual SRNO Input -->
+    <div class="mt-4 w-full flex flex-col space-y-3">
+        <input id="manual-srno" class="w-full p-2 rounded-lg text-black" type="text" placeholder="Enter SRNO manually">
+        <button id="add-manual" class="bg-blue-500 w-full py-3 rounded-lg shadow-md text-lg font-bold text-white">
+            ➕ Add SRNO Manually
+        </button>
+    </div>
+
     <!-- Buttons -->
-    <div class="mt-6 w-full flex flex-col space-y-3">
-        <button id="scan-another" class="hidden bg-[#ffdd57] w-full py-3 rounded-lg shadow-md text-lg font-bold  transition">
+    <div class="mt-4 w-full flex flex-col space-y-3">
+        <button id="scan-another" class="bg-yellow-500 w-full py-3 rounded-lg shadow-md text-lg font-bold hidden">
             🔄 Scan Another
         </button>
-        <button id="export-excel" class="bg-white w-full py-3 rounded-lg shadow-md text-lg  text-gray-600" disabled>
+        <button id="export-excel" class="bg-white w-full py-3 rounded-lg shadow-md text-lg text-gray-600" disabled>
             📥 Export to Excel
         </button>
     </div>
@@ -51,7 +58,7 @@
 
     <!-- Footer -->
     <footer class="text-center text-gray-300 mt-4">
-         <a href="http://amanmauryas.live">Made with ❤️ by <span class="text-yellow-400 font-bold">Aman Maurya</span></a>
+        <a href="http://amanmauryas.live">Made with ❤️ by <span class="text-yellow-400 font-bold">Aman Maurya</span></a>
     </footer>
 
     <canvas id="canvas" class="hidden"></canvas>
@@ -115,14 +122,18 @@
             });
         }
 
-        function exportToExcel() {
-            let ws = XLSX.utils.json_to_sheet(srnoList.map(srno => ({ SRNO: srno })));
-            let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Scanned SRNOs");
-            XLSX.writeFile(wb, "scanned_srnos.xlsx");
-            alert("Excel file downloaded!");
-        }
+        // Manual SRNO Addition
+        document.getElementById('add-manual').addEventListener('click', () => {
+            let manualSrno = document.getElementById('manual-srno').value.trim();
+            if (manualSrno && !srnoList.includes(manualSrno)) {
+                srnoList.push(manualSrno);
+                document.getElementById('manual-srno').value = "";
+                updateSRNOList();
+                document.getElementById('export-excel').disabled = false;
+            }
+        });
 
+        // Restart Scanning
         document.getElementById('scan-another').addEventListener('click', () => {
             scanning = true;
             document.getElementById('scan-another').classList.add("hidden");
@@ -130,6 +141,14 @@
             scanQR();
         });
 
+        // Export to Excel
+        function exportToExcel() {
+            let ws = XLSX.utils.json_to_sheet(srnoList.map(srno => ({ SRNO: srno })));
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Scanned SRNOs");
+            XLSX.writeFile(wb, "scanned_srnos.xlsx");
+            alert("Excel file downloaded!");
+        }
         document.getElementById('export-excel').addEventListener('click', exportToExcel);
 
         startCamera();
